@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  phone           String?   @unique
+  passwordHash    String
+  role            String
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  otpCodes       OtpCode[]
+  classTeacherOf Class[]              @relation("ClassTeacher")
+  teaching       ClassSubject[]
+  markedSessions AttendanceSession[]
+}
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  purpose    String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, purpose])
+}
+
+model Class {
+  id             String   @id @default(cuid())
+  name           String
+  program        String
+  section        String
+  batchYear      Int
+  semester       Int
+  classTeacherId String?
+  classTeacher   User?    @relation("ClassTeacher", fields: [classTeacherId], references: [id])
+  createdAt      DateTime @default(now())
+
+  students Student[]
+  subjects ClassSubject[]
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  classes ClassSubject[]
+}
+
+model ClassSubject {
+  id        String @id @default(cuid())
+  classId   String
+  subjectId String
+  teacherId String
+  class     Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher   User    @relation(fields: [teacherId], references: [id])
+
+  sessions AttendanceSession[]
+
+  @@unique([classId, subjectId])
+}
+
+model Student {
+  id         String @id @default(cuid())
+  rollNumber String
+  name       String
+  classId    String
+  class      Class  @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  records AttendanceRecord[]
+
+  @@unique([classId, rollNumber])
+}
+
+model AttendanceSession {
+  id             String   @id @default(cuid())
+  classSubjectId String
+  classSubject   ClassSubject @relation(fields: [classSubjectId], references: [id], onDelete: Cascade)
+  date           DateTime
+  period         Int      @default(1)
+  markedById     String
+  markedBy       User     @relation(fields: [markedById], references: [id])
+  createdAt      DateTime @default(now())
+
+  records AttendanceRecord[]
+
+  @@unique([classSubjectId, date, period])
+}
+
+model AttendanceRecord {
+  id        String             @id @default(cuid())
+  sessionId String
+  studentId String
+  status    String
+  session   AttendanceSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student   Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+}

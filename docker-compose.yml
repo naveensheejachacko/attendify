@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: attendify
+      POSTGRES_PASSWORD: attendify
+      POSTGRES_DB: attendify
+    ports:
+      - "5433:5432"
+    volumes:
+      - attendify_pg:/var/lib/postgresql/data
+
+volumes:
+  attendify_pg:

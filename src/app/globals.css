@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-paper: #f4efe4;
+  --color-ink: #1b2a4a;
+  --color-mark: #2f6f4e;
+  --color-coral: #c45c4a;
+  --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-fraunces);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
