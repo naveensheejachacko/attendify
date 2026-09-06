@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-const CLIENT_REV = 3;
+const CLIENT_REV = 4;
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -19,4 +19,4 @@ if (globalForPrisma.prismaRev !== CLIENT_REV) {
   globalForPrisma.prismaRev = CLIENT_REV;
 }
 
-export const prisma = globalForPrisma.prisma;
+export const prisma: PrismaClient = globalForPrisma.prisma ?? createClient();

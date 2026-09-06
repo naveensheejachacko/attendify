@@ -52,7 +52,7 @@ export async function registerAction(
       email: parsed.data.email,
       passwordHash,
       role: isFirstAdmin ? Role.ADMIN : Role.TEACHER,
-      approvedAt: isFirstAdmin ? new Date() : null,
+      ...(isFirstAdmin ? { approvedAt: new Date() } : {}),
     },
   });
 
