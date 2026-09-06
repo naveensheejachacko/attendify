@@ -3,11 +3,11 @@ import { Role } from "@/lib/roles";
 
 export const activeFacultyWhere: Prisma.UserWhereInput = {
   role: Role.TEACHER,
-  deletedAt: null,
+  deletedAt: { equals: null },
   emailVerifiedAt: { not: null },
   approvedAt: { not: null },
 };
 
 export const activeStudentWhere: Prisma.StudentWhereInput = {
-  deletedAt: null,
+  deletedAt: { equals: null },
 };

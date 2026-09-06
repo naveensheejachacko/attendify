@@ -40,10 +40,11 @@ export async function registerAction(
     return { error: "An account with this email already exists." };
   }
 
-  const adminCount = await prisma.user.count({
-    where: { role: Role.ADMIN, deletedAt: null },
+  const existingAdmin = await prisma.user.findFirst({
+    where: { role: Role.ADMIN },
+    select: { id: true },
   });
-  const isFirstAdmin = adminCount === 0;
+  const isFirstAdmin = existingAdmin === null;
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
   const user = await prisma.user.create({
     data: {
