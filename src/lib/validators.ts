@@ -53,16 +53,16 @@ export const studentSchema = z.object({
   name: z.string().trim().min(2).max(80),
 });
 
+export const bulkStudentsSchema = z.object({
+  classId: z.string().min(1),
+  rows: z.string().trim().min(1),
+});
+
 export const facultyUpdateSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(2).max(80),
   email: z.string().trim().email().toLowerCase(),
-  phone: z
-    .string()
-    .trim()
-    .max(20)
-    .optional()
-    .transform((value) => (value && value.length > 0 ? value : undefined)),
+  phone: z.string().trim().max(20),
 });
 
 export const studentUpdateSchema = z.object({
