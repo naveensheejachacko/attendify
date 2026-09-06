@@ -4,12 +4,18 @@ type SendOtpInput = {
   purpose: "verify" | "reset";
 };
 
-const RESEND_TEST_FROM = "Attendify <beth.t@example.com>";
+const RESEND_TEST_FROM = "Attendify <onboarding@resend.dev>";
 
 function resendMessage(body: string): string {
   try {
     const parsed = JSON.parse(body) as { message?: string };
     if (parsed.message) {
+      if (parsed.message.includes("only send testing emails")) {
+        return `${parsed.message} Register with that Gmail for now. Do not add example.com or a Vercel URL in Resend domains.`;
+      }
+      if (parsed.message.includes("example.com")) {
+        return "Resend rejected the sender. In Vercel set EMAIL_FROM to Attendify <onboarding@resend.dev> (no quotes) and Redeploy. Test mail only goes to the Gmail on your Resend account.";
+      }
       return parsed.message;
     }
   } catch {
@@ -45,8 +51,6 @@ export async function sendOtpEmail({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // Resend free/test: must use this sender. Custom EMAIL_FROM only works after you
-      // verify a domain you own — vercel.app cannot be verified.
       from: RESEND_TEST_FROM,
       to,
       subject,
