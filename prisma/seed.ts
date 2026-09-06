@@ -8,37 +8,52 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@college.edu" },
-    update: {},
+    update: {
+      emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
+      deletedAt: null,
+    },
     create: {
       name: "College Admin",
       email: "admin@college.edu",
       passwordHash,
       role: "ADMIN",
       emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
     },
   });
 
   const advisor = await prisma.user.upsert({
     where: { email: "advisor@college.edu" },
-    update: {},
+    update: {
+      emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
+      deletedAt: null,
+    },
     create: {
       name: "Priya Nair",
       email: "advisor@college.edu",
       passwordHash,
       role: "TEACHER",
       emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
     },
   });
 
   const lecturer = await prisma.user.upsert({
     where: { email: "lecturer@college.edu" },
-    update: {},
+    update: {
+      emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
+      deletedAt: null,
+    },
     create: {
       name: "Arun Menon",
       email: "lecturer@college.edu",
       passwordHash,
       role: "TEACHER",
       emailVerifiedAt: new Date(),
+      approvedAt: new Date(),
     },
   });
 

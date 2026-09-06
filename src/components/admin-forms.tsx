@@ -7,6 +7,8 @@ import {
   bulkAddStudentsAction,
   createClassAction,
   createSubjectAction,
+  updateFacultyAction,
+  updateStudentAction,
 } from "@/lib/actions/admin";
 import type { ActionState } from "@/lib/actions/auth";
 import { Field, FormStatus, btnClass, inputClass } from "@/components/form-ui";
@@ -183,5 +185,71 @@ export function StudentForms({ classes }: { classes: Option[] }) {
         </button>
       </form>
     </div>
+  );
+}
+
+export function EditFacultyForm({
+  faculty,
+}: {
+  faculty: { id: string; name: string; email: string; phone: string | null };
+}) {
+  const [state, action, pending] = useActionState(updateFacultyAction, {} as ActionState);
+  return (
+    <form action={action} className="max-w-lg space-y-4">
+      <FormStatus state={state} />
+      <input type="hidden" name="id" value={faculty.id} />
+      <Field label="Name">
+        <input className={inputClass} name="name" defaultValue={faculty.name} required />
+      </Field>
+      <Field label="Email">
+        <input
+          className={inputClass}
+          name="email"
+          type="email"
+          defaultValue={faculty.email}
+          required
+        />
+      </Field>
+      <Field label="Phone">
+        <input className={inputClass} name="phone" defaultValue={faculty.phone ?? ""} />
+      </Field>
+      <button className={`${btnClass} md:w-auto`} disabled={pending}>
+        {pending ? "Saving…" : "Save details"}
+      </button>
+    </form>
+  );
+}
+
+export function EditStudentForm({
+  student,
+  classes,
+}: {
+  student: { id: string; name: string; rollNumber: string; classId: string };
+  classes: Option[];
+}) {
+  const [state, action, pending] = useActionState(updateStudentAction, {} as ActionState);
+  return (
+    <form action={action} className="max-w-lg space-y-4">
+      <FormStatus state={state} />
+      <input type="hidden" name="id" value={student.id} />
+      <Field label="Class">
+        <select className={inputClass} name="classId" defaultValue={student.classId} required>
+          {classes.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Roll number">
+        <input className={inputClass} name="rollNumber" defaultValue={student.rollNumber} required />
+      </Field>
+      <Field label="Name">
+        <input className={inputClass} name="name" defaultValue={student.name} required />
+      </Field>
+      <button className={`${btnClass} md:w-auto`} disabled={pending}>
+        {pending ? "Saving…" : "Save details"}
+      </button>
+    </form>
   );
 }

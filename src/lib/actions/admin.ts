@@ -225,7 +225,7 @@ export async function updateFacultyAction(
       data: {
         name: parsed.data.name,
         email: parsed.data.email,
-        phone: parsed.data.phone ?? null,
+        phone: parsed.data.phone ? parsed.data.phone : null,
       },
     });
   } catch {
