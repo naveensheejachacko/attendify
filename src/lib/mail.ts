@@ -6,14 +6,6 @@ type SendOtpInput = {
 
 const RESEND_TEST_FROM = "Attendify <beth.t@example.com>";
 
-function senderAddress(): string {
-  const from = process.env.EMAIL_FROM?.trim() || RESEND_TEST_FROM;
-  if (from.includes("@example.com")) {
-    return RESEND_TEST_FROM;
-  }
-  return from;
-}
-
 function resendMessage(body: string): string {
   try {
     const parsed = JSON.parse(body) as { message?: string };
@@ -53,7 +45,9 @@ export async function sendOtpEmail({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: senderAddress(),
+      // Resend free/test: must use this sender. Custom EMAIL_FROM only works after you
+      // verify a domain you own — vercel.app cannot be verified.
+      from: RESEND_TEST_FROM,
       to,
       subject,
       html,
