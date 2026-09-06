@@ -11,8 +11,8 @@ export default async function LoginPage({
       <h1 className="font-serif text-3xl">Log in</h1>
       <p className="mb-8 mt-2 text-sm text-ink/60">
         {status === "pending"
-          ? "Email verified. Admin still needs to approve your faculty access before you can log in."
-          : "Use your verified college email. Faculty must be approved by admin after signup."}
+          ? "Account created. Ask admin to approve you on the Faculty page, then log in."
+          : "Faculty must be approved by admin after signup."}
       </p>
       <LoginForm />
     </div>

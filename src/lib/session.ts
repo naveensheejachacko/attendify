@@ -73,7 +73,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
         deletedAt: true,
       },
     });
-    if (!user || user.deletedAt || !user.emailVerifiedAt) {
+    if (!user || user.deletedAt) {
       return null;
     }
     if (user.role === Role.TEACHER && !user.approvedAt) {

@@ -3,15 +3,12 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { sendOtpEmail } from "@/lib/mail";
-import { consumeOtp, issueOtp } from "@/lib/otp";
-import { OtpPurpose, Role } from "@/lib/roles";
+import { Role } from "@/lib/roles";
 import { clearSession, createSession, requireUser } from "@/lib/session";
 import {
   loginSchema,
   passwordUpdateSchema,
   registerSchema,
-  verifySchema,
 } from "@/lib/validators";
 
 export type ActionState = {
@@ -36,19 +33,7 @@ export async function registerAction(
     where: { email: parsed.data.email },
   });
   if (existing) {
-    if (existing.emailVerifiedAt || existing.deletedAt) {
-      return { error: "An account with this email already exists." };
-    }
-    const code = await issueOtp(existing.id, OtpPurpose.EMAIL_VERIFY);
-    const mail = await sendOtpEmail({
-      to: existing.email,
-      code,
-      purpose: "verify",
-    });
-    if (!mail.delivered) {
-      return { error: mail.error ?? "Could not send the verification email." };
-    }
-    redirect(`/verify?email=${encodeURIComponent(existing.email)}`);
+    return { error: "An account with this email already exists." };
   }
 
   const existingAdmin = await prisma.user.findFirst({
@@ -56,6 +41,7 @@ export async function registerAction(
     select: { id: true },
   });
   const isFirstAdmin = existingAdmin === null;
+  const now = new Date();
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
   const user = await prisma.user.create({
     data: {
@@ -63,84 +49,22 @@ export async function registerAction(
       email: parsed.data.email,
       passwordHash,
       role: isFirstAdmin ? Role.ADMIN : Role.TEACHER,
-      ...(isFirstAdmin ? { approvedAt: new Date() } : {}),
+      emailVerifiedAt: now,
+      approvedAt: isFirstAdmin ? now : null,
     },
   });
 
-  const code = await issueOtp(user.id, OtpPurpose.EMAIL_VERIFY);
-  const mail = await sendOtpEmail({
-    to: user.email,
-    code,
-    purpose: "verify",
-  });
-  if (!mail.delivered) {
-    return {
-      error: mail.error ?? "Could not send the verification email. Try Resend code on the next page.",
-    };
+  if (isFirstAdmin) {
+    await createSession({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: Role.ADMIN,
+    });
+    redirect("/dashboard");
   }
 
-  redirect(`/verify?email=${encodeURIComponent(user.email)}`);
-}
-
-export async function verifyEmailAction(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const parsed = verifySchema.safeParse(formValues(formData));
-  if (!parsed.success) {
-    return { error: "Enter the 6-digit code sent to your email." };
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: parsed.data.email },
-  });
-  if (!user) {
-    return { error: "No account found for this email." };
-  }
-
-  const ok = await consumeOtp(user.id, OtpPurpose.EMAIL_VERIFY, parsed.data.code);
-  if (!ok) {
-    return { error: "Invalid or expired code." };
-  }
-
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data: { emailVerifiedAt: new Date() },
-  });
-
-  if (updated.role === Role.TEACHER && !updated.approvedAt) {
-    redirect("/login?status=pending");
-  }
-
-  await createSession({
-    id: updated.id,
-    name: updated.name,
-    email: updated.email,
-    role: updated.role as Role,
-  });
-  redirect("/dashboard");
-}
-
-export async function resendOtpAction(
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const email = String(formData.get("email") ?? "")
-    .trim()
-    .toLowerCase();
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return { error: "No account found for this email." };
-  }
-  if (user.emailVerifiedAt) {
-    return { message: "This email is already verified. You can log in." };
-  }
-  const code = await issueOtp(user.id, OtpPurpose.EMAIL_VERIFY);
-  const mail = await sendOtpEmail({ to: user.email, code, purpose: "verify" });
-  if (!mail.delivered) {
-    return { error: mail.error ?? "Could not send email. Check Resend settings." };
-  }
-  return { message: "A new code was sent to your email." };
+  redirect("/login?status=pending");
 }
 
 export async function loginAction(
@@ -164,21 +88,8 @@ export async function loginAction(
     return { error: "Invalid email or password." };
   }
 
-  if (!user.emailVerifiedAt) {
-    const code = await issueOtp(user.id, OtpPurpose.EMAIL_VERIFY);
-    const mail = await sendOtpEmail({
-      to: user.email,
-      code,
-      purpose: "verify",
-    });
-    if (!mail.delivered) {
-      return { error: mail.error ?? "Could not send the verification email." };
-    }
-    redirect(`/verify?email=${encodeURIComponent(user.email)}`);
-  }
-
   if (user.role === Role.TEACHER && !user.approvedAt) {
-    return { error: "Email is verified. Wait for admin to approve your faculty access." };
+    return { error: "Wait for admin to approve your faculty access." };
   }
 
   await createSession({

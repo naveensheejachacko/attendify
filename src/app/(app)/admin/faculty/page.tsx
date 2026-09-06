@@ -15,9 +15,6 @@ function statusLabel(row: {
   if (row.deletedAt) {
     return "Removed";
   }
-  if (!row.emailVerifiedAt) {
-    return "Email not verified";
-  }
   if (!row.approvedAt) {
     return "Waiting approval";
   }
@@ -53,7 +50,7 @@ export default async function FacultyPage() {
                 {statusLabel(row)}
               </span>
               <div className="flex flex-wrap gap-2">
-                {!row.deletedAt && row.emailVerifiedAt && !row.approvedAt ? (
+                {!row.deletedAt && !row.approvedAt ? (
                   <form action={approveFacultyAction}>
                     <input type="hidden" name="id" value={row.id} />
                     <button className="rounded-full bg-mark px-3 py-1 text-xs text-paper">

@@ -194,7 +194,7 @@ export async function approveFacultyAction(formData: FormData): Promise<void> {
   const faculty = await prisma.user.findFirst({
     where: { id: parsed.data.id, role: Role.TEACHER, deletedAt: null },
   });
-  if (!faculty || !faculty.emailVerifiedAt) {
+  if (!faculty) {
     return;
   }
   await prisma.user.update({

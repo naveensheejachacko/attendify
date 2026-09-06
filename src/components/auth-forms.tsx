@@ -35,7 +35,7 @@ export function RegisterForm() {
         />
       </Field>
       <button className={btnClass} disabled={pending}>
-        {pending ? "Sending code…" : "Verify email"}
+        {pending ? "Creating account…" : "Create account"}
       </button>
       <p className="text-center text-sm text-ink/60">
         Already have an account?{" "}

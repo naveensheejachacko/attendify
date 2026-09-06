@@ -4,7 +4,6 @@ import { Role } from "@/lib/roles";
 export const activeFacultyWhere: Prisma.UserWhereInput = {
   role: Role.TEACHER,
   deletedAt: { equals: null },
-  emailVerifiedAt: { not: null },
   approvedAt: { not: null },
 };
 
