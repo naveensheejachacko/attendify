@@ -17,7 +17,6 @@ import {
 export type ActionState = {
   error?: string;
   message?: string;
-  previewCode?: string;
 };
 
 function formValues(formData: FormData) {
@@ -37,7 +36,19 @@ export async function registerAction(
     where: { email: parsed.data.email },
   });
   if (existing) {
-    return { error: "An account with this email already exists." };
+    if (existing.emailVerifiedAt || existing.deletedAt) {
+      return { error: "An account with this email already exists." };
+    }
+    const code = await issueOtp(existing.id, OtpPurpose.EMAIL_VERIFY);
+    const mail = await sendOtpEmail({
+      to: existing.email,
+      code,
+      purpose: "verify",
+    });
+    if (!mail.delivered) {
+      return { error: mail.error ?? "Could not send the verification email." };
+    }
+    redirect(`/verify?email=${encodeURIComponent(existing.email)}`);
   }
 
   const existingAdmin = await prisma.user.findFirst({
@@ -62,12 +73,13 @@ export async function registerAction(
     code,
     purpose: "verify",
   });
+  if (!mail.delivered) {
+    return {
+      error: mail.error ?? "Could not send the verification email. Try Resend code on the next page.",
+    };
+  }
 
-  redirect(
-    `/verify?email=${encodeURIComponent(user.email)}${
-      mail.previewCode ? `&dev=${mail.previewCode}` : ""
-    }`,
-  );
+  redirect(`/verify?email=${encodeURIComponent(user.email)}`);
 }
 
 export async function verifyEmailAction(
@@ -125,10 +137,10 @@ export async function resendOtpAction(
   }
   const code = await issueOtp(user.id, OtpPurpose.EMAIL_VERIFY);
   const mail = await sendOtpEmail({ to: user.email, code, purpose: "verify" });
-  return {
-    message: mail.delivered ? "A new code was sent." : "A new code was issued.",
-    previewCode: mail.previewCode,
-  };
+  if (!mail.delivered) {
+    return { error: mail.error ?? "Could not send email. Check Resend settings." };
+  }
+  return { message: "A new code was sent to your email." };
 }
 
 export async function loginAction(
@@ -159,11 +171,10 @@ export async function loginAction(
       code,
       purpose: "verify",
     });
-    redirect(
-      `/verify?email=${encodeURIComponent(user.email)}${
-        mail.previewCode ? `&dev=${mail.previewCode}` : ""
-      }`,
-    );
+    if (!mail.delivered) {
+      return { error: mail.error ?? "Could not send the verification email." };
+    }
+    redirect(`/verify?email=${encodeURIComponent(user.email)}`);
   }
 
   if (user.role === Role.TEACHER && !user.approvedAt) {

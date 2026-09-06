@@ -3,7 +3,7 @@ import { VerifyForm } from "@/components/verify-form";
 export default async function VerifyPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; dev?: string }>;
+  searchParams: Promise<{ email?: string }>;
 }) {
   const query = await searchParams;
   const email = query.email ?? "";
@@ -12,10 +12,10 @@ export default async function VerifyPage({
       <h1 className="font-serif text-3xl">Verify email</h1>
       <p className="mb-8 mt-2 text-sm text-ink/60">
         {email
-          ? `Enter the code sent to ${email}.`
+          ? `Enter the 6-digit code we emailed to ${email}. Check spam if you do not see it.`
           : "Open this page from the register flow so we know which email to verify."}
       </p>
-      {email ? <VerifyForm email={email} previewCode={query.dev} /> : null}
+      {email ? <VerifyForm email={email} /> : null}
     </div>
   );
 }
