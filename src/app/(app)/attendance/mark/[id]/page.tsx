@@ -1,4 +1,5 @@
 import { MarkAttendanceForm } from "@/components/mark-form";
+import { todayInCollege } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 import { AttendanceStatus, Role } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
@@ -28,10 +29,10 @@ export default async function MarkPage({
     redirect("/attendance/mark");
   }
 
-  const today = new Date();
-  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const defaultDate = todayInCollege();
+  const sessionDate = new Date(`${defaultDate}T00:00:00.000Z`);
   const existing = await prisma.attendanceSession.findFirst({
-    where: { classSubjectId: id, date: start, period: 1 },
+    where: { classSubjectId: id, date: sessionDate, period: 1 },
     include: { records: true },
   });
   const initialMarks = Object.fromEntries(
@@ -56,6 +57,7 @@ export default async function MarkPage({
           classSubjectId={assignment.id}
           students={assignment.class.students}
           initialMarks={initialMarks}
+          defaultDate={defaultDate}
         />
       )}
     </div>

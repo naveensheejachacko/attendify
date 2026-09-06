@@ -30,8 +30,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} ${serif.variable} h-full antialiased`}>
-      <body className="min-h-full bg-paper font-sans text-ink">{children}</body>
+    <html
+      lang="en"
+      className={`${sans.variable} ${serif.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-full bg-paper font-sans text-ink" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

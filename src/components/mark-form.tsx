@@ -19,12 +19,13 @@ export function MarkAttendanceForm({
   classSubjectId,
   students,
   initialMarks,
+  defaultDate,
 }: {
   classSubjectId: string;
   students: Student[];
   initialMarks: Record<string, string>;
+  defaultDate: string;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
   const [marks, setMarks] = useState<Record<string, string>>(initialMarks);
   const [state, action, pending] = useActionState(
     saveAttendanceAction,
@@ -59,7 +60,7 @@ export function MarkAttendanceForm({
           <span className="text-xs font-medium uppercase tracking-[0.14em] text-ink/60">
             Date
           </span>
-          <input className={inputClass} type="date" name="date" defaultValue={today} required />
+          <input className={inputClass} type="date" name="date" defaultValue={defaultDate} required />
         </label>
         <label className="space-y-1.5">
           <span className="text-xs font-medium uppercase tracking-[0.14em] text-ink/60">

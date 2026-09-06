@@ -13,13 +13,26 @@ export function RegisterForm() {
     <form action={action} className="space-y-4">
       <FormStatus state={state} />
       <Field label="Full name">
-        <input className={inputClass} name="name" required minLength={2} />
+        <input className={inputClass} name="name" autoComplete="name" required minLength={2} />
       </Field>
       <Field label="College email">
-        <input className={inputClass} name="email" type="email" required />
+        <input
+          className={inputClass}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+        />
       </Field>
       <Field label="Password">
-        <input className={inputClass} name="password" type="password" required minLength={8} />
+        <input
+          className={inputClass}
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          required
+          minLength={8}
+        />
       </Field>
       <button className={btnClass} disabled={pending}>
         {pending ? "Sending code…" : "Verify email"}
@@ -40,10 +53,22 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       <FormStatus state={state} />
       <Field label="Email">
-        <input className={inputClass} name="email" type="email" required />
+        <input
+          className={inputClass}
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+        />
       </Field>
       <Field label="Password">
-        <input className={inputClass} name="password" type="password" required />
+        <input
+          className={inputClass}
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
       </Field>
       <button className={btnClass} disabled={pending}>
         {pending ? "Signing in…" : "Log in"}
