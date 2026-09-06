@@ -2,13 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { activeFacultyWhere, activeStudentWhere } from "@/lib/people";
 import { Role } from "@/lib/roles";
 import { requireAdmin } from "@/lib/session";
 import {
   assignSchema,
   bulkStudentsSchema,
   classSchema,
+  facultyUpdateSchema,
+  idSchema,
   studentSchema,
+  studentUpdateSchema,
   subjectSchema,
 } from "@/lib/validators";
 import type { ActionState } from "@/lib/actions/auth";
@@ -34,10 +38,10 @@ export async function createClassAction(
 
   if (classTeacherId) {
     const teacher = await prisma.user.findFirst({
-      where: { id: classTeacherId, role: Role.TEACHER, emailVerifiedAt: { not: null } },
+      where: { id: classTeacherId, ...activeFacultyWhere },
     });
     if (!teacher) {
-      return { error: "Class teacher must be a verified teacher account." };
+      return { error: "Class teacher must be an approved faculty account." };
     }
   }
 
@@ -86,11 +90,7 @@ export async function assignTeacherAction(
   }
 
   const teacher = await prisma.user.findFirst({
-    where: {
-      id: parsed.data.teacherId,
-      role: Role.TEACHER,
-      emailVerifiedAt: { not: null },
-    },
+    where: { id: parsed.data.teacherId, ...activeFacultyWhere },
   });
   if (!teacher) {
     return { error: "Teacher account is not valid." };
@@ -175,4 +175,151 @@ export async function bulkAddStudentsAction(
   });
   revalidatePath("/admin/students");
   return { message: `Imported ${rows.length} student row(s). Duplicates were skipped.` };
+}
+
+function revalidatePeople() {
+  revalidatePath("/admin/faculty");
+  revalidatePath("/admin/students");
+  revalidatePath("/admin/classes");
+  revalidatePath("/admin/assignments");
+  revalidatePath("/dashboard");
+}
+
+export async function approveFacultyAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const parsed = idSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return;
+  }
+  const faculty = await prisma.user.findFirst({
+    where: { id: parsed.data.id, role: Role.TEACHER, deletedAt: null },
+  });
+  if (!faculty || !faculty.emailVerifiedAt) {
+    return;
+  }
+  await prisma.user.update({
+    where: { id: faculty.id },
+    data: { approvedAt: new Date() },
+  });
+  revalidatePeople();
+}
+
+export async function updateFacultyAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = facultyUpdateSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return { error: "Enter a valid name and email." };
+  }
+  const faculty = await prisma.user.findFirst({
+    where: { id: parsed.data.id, role: Role.TEACHER },
+  });
+  if (!faculty || faculty.deletedAt) {
+    return { error: "Faculty not found." };
+  }
+  try {
+    await prisma.user.update({
+      where: { id: faculty.id },
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        phone: parsed.data.phone ?? null,
+      },
+    });
+  } catch {
+    return { error: "That email or phone is already in use." };
+  }
+  revalidatePeople();
+  revalidatePath(`/admin/faculty/${faculty.id}`);
+  return { message: "Faculty details saved." };
+}
+
+export async function softDeleteFacultyAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const parsed = idSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return;
+  }
+  await prisma.$transaction([
+    prisma.user.updateMany({
+      where: { id: parsed.data.id, role: Role.TEACHER, deletedAt: null },
+      data: { deletedAt: new Date() },
+    }),
+    prisma.class.updateMany({
+      where: { classTeacherId: parsed.data.id },
+      data: { classTeacherId: null },
+    }),
+  ]);
+  revalidatePeople();
+}
+
+export async function restoreFacultyAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const parsed = idSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return;
+  }
+  await prisma.user.updateMany({
+    where: { id: parsed.data.id, role: Role.TEACHER },
+    data: { deletedAt: null },
+  });
+  revalidatePeople();
+}
+
+export async function updateStudentAction(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = studentUpdateSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return { error: "Enter class, roll number, and name." };
+  }
+  const student = await prisma.student.findUnique({ where: { id: parsed.data.id } });
+  if (!student || student.deletedAt) {
+    return { error: "Student not found." };
+  }
+  try {
+    await prisma.student.update({
+      where: { id: student.id },
+      data: {
+        classId: parsed.data.classId,
+        rollNumber: parsed.data.rollNumber,
+        name: parsed.data.name,
+      },
+    });
+  } catch {
+    return { error: "That roll number already exists in the selected class." };
+  }
+  revalidatePeople();
+  revalidatePath(`/admin/students/${student.id}`);
+  return { message: "Student details saved." };
+}
+
+export async function softDeleteStudentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const parsed = idSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return;
+  }
+  await prisma.student.updateMany({
+    where: { id: parsed.data.id, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
+  revalidatePeople();
+}
+
+export async function restoreStudentAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const parsed = idSchema.safeParse(formValues(formData));
+  if (!parsed.success) {
+    return;
+  }
+  await prisma.student.updateMany({
+    where: { id: parsed.data.id },
+    data: { deletedAt: null },
+  });
+  revalidatePeople();
 }

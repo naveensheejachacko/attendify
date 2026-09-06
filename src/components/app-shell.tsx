@@ -16,6 +16,7 @@ export function AppShell({
     { href: "/attendance/class", label: "Class view" },
     ...(user.role === Role.ADMIN
       ? [
+          { href: "/admin/faculty", label: "Faculty" },
           { href: "/admin/classes", label: "Classes" },
           { href: "/admin/subjects", label: "Subjects" },
           { href: "/admin/assignments", label: "Assign" },

@@ -1,3 +1,4 @@
+import { activeStudentWhere } from "@/lib/people";
 import { MarkAttendanceForm } from "@/components/mark-form";
 import { todayInCollege } from "@/lib/dates";
 import { prisma } from "@/lib/db";
@@ -18,7 +19,11 @@ export default async function MarkPage({
   const assignment = await prisma.classSubject.findUnique({
     where: { id },
     include: {
-      class: { include: { students: { orderBy: { rollNumber: "asc" } } } },
+      class: {
+        include: {
+          students: { where: activeStudentWhere, orderBy: { rollNumber: "asc" } },
+        },
+      },
       subject: true,
     },
   });

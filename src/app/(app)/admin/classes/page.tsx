@@ -1,18 +1,18 @@
 import { CreateClassForm } from "@/components/admin-forms";
 import { prisma } from "@/lib/db";
-import { Role } from "@/lib/roles";
+import { activeFacultyWhere, activeStudentWhere } from "@/lib/people";
 
 export default async function ClassesPage() {
   const [classes, teachers] = await Promise.all([
     prisma.class.findMany({
       include: {
         classTeacher: { select: { name: true, email: true } },
-        _count: { select: { students: true, subjects: true } },
+        _count: { select: { students: { where: activeStudentWhere }, subjects: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
-      where: { role: Role.TEACHER, emailVerifiedAt: { not: null } },
+      where: activeFacultyWhere,
       orderBy: { name: "asc" },
     }),
   ]);

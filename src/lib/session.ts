@@ -63,9 +63,20 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
     const user = await prisma.user.findUnique({
       where: { id },
-      select: { id: true, name: true, email: true, role: true, emailVerifiedAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        emailVerifiedAt: true,
+        approvedAt: true,
+        deletedAt: true,
+      },
     });
-    if (!user || !user.emailVerifiedAt) {
+    if (!user || user.deletedAt || !user.emailVerifiedAt) {
+      return null;
+    }
+    if (user.role === Role.TEACHER && !user.approvedAt) {
       return null;
     }
     if (user.role !== Role.ADMIN && user.role !== Role.TEACHER) {

@@ -40,14 +40,18 @@ export async function registerAction(
     return { error: "An account with this email already exists." };
   }
 
-  const adminCount = await prisma.user.count({ where: { role: Role.ADMIN } });
+  const adminCount = await prisma.user.count({
+    where: { role: Role.ADMIN, deletedAt: null },
+  });
+  const isFirstAdmin = adminCount === 0;
   const passwordHash = await bcrypt.hash(parsed.data.password, 10);
   const user = await prisma.user.create({
     data: {
       name: parsed.data.name,
       email: parsed.data.email,
       passwordHash,
-      role: adminCount === 0 ? Role.ADMIN : Role.TEACHER,
+      role: isFirstAdmin ? Role.ADMIN : Role.TEACHER,
+      approvedAt: isFirstAdmin ? new Date() : null,
     },
   });
 
@@ -90,6 +94,10 @@ export async function verifyEmailAction(
     where: { id: user.id },
     data: { emailVerifiedAt: new Date() },
   });
+
+  if (updated.role === Role.TEACHER && !updated.approvedAt) {
+    redirect("/login?status=pending");
+  }
 
   await createSession({
     id: updated.id,
@@ -134,7 +142,7 @@ export async function loginAction(
   const user = await prisma.user.findUnique({
     where: { email: parsed.data.email },
   });
-  if (!user) {
+  if (!user || user.deletedAt) {
     return { error: "Invalid email or password." };
   }
 
@@ -155,6 +163,10 @@ export async function loginAction(
         mail.previewCode ? `&dev=${mail.previewCode}` : ""
       }`,
     );
+  }
+
+  if (user.role === Role.TEACHER && !user.approvedAt) {
+    return { error: "Email is verified. Wait for admin to approve your faculty access." };
   }
 
   await createSession({

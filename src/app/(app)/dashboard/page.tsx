@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { activeFacultyWhere, activeStudentWhere } from "@/lib/people";
 import { Role } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -19,12 +20,12 @@ export default async function DashboardPage() {
       }),
       prisma.class.findMany({
         where: { classTeacherId: user.id },
-        include: { _count: { select: { students: true } } },
+        include: { _count: { select: { students: { where: activeStudentWhere } } } },
       }),
       user.role === Role.ADMIN ? prisma.class.count() : Promise.resolve(0),
       user.role === Role.ADMIN ? prisma.subject.count() : Promise.resolve(0),
       user.role === Role.ADMIN
-        ? prisma.user.count({ where: { role: Role.TEACHER } })
+        ? prisma.user.count({ where: activeFacultyWhere })
         : Promise.resolve(0),
     ]);
 
@@ -42,7 +43,7 @@ export default async function DashboardPage() {
           {[
             { href: "/admin/classes", label: "Classes", value: classCount },
             { href: "/admin/subjects", label: "Subjects", value: subjectCount },
-            { href: "/admin/assignments", label: "Faculty", value: teacherCount },
+            { href: "/admin/faculty", label: "Faculty", value: teacherCount },
           ].map((card) => (
             <Link
               key={card.href}

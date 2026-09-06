@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { activeStudentWhere } from "@/lib/people";
 import { AttendanceStatus, Role } from "@/lib/roles";
 import { getSessionUser } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -47,7 +48,7 @@ export default async function ClassAttendancePage({
   const cls = await prisma.class.findUnique({
     where: { id: classId },
     include: {
-      students: { orderBy: { rollNumber: "asc" } },
+      students: { where: activeStudentWhere, orderBy: { rollNumber: "asc" } },
       subjects: {
         include: {
           subject: true,

@@ -53,7 +53,25 @@ export const studentSchema = z.object({
   name: z.string().trim().min(2).max(80),
 });
 
-export const bulkStudentsSchema = z.object({
+export const facultyUpdateSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(2).max(80),
+  email: z.string().trim().email().toLowerCase(),
+  phone: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .transform((value) => (value && value.length > 0 ? value : undefined)),
+});
+
+export const studentUpdateSchema = z.object({
+  id: z.string().min(1),
   classId: z.string().min(1),
-  rows: z.string().trim().min(1),
+  rollNumber: z.string().trim().min(1).max(32),
+  name: z.string().trim().min(2).max(80),
+});
+
+export const idSchema = z.object({
+  id: z.string().min(1),
 });

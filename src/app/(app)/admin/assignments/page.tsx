@@ -1,13 +1,13 @@
 import { AssignForm } from "@/components/admin-forms";
 import { prisma } from "@/lib/db";
-import { Role } from "@/lib/roles";
+import { activeFacultyWhere } from "@/lib/people";
 
 export default async function AssignmentsPage() {
   const [classes, subjects, teachers, assignments] = await Promise.all([
     prisma.class.findMany({ orderBy: { name: "asc" } }),
     prisma.subject.findMany({ orderBy: { code: "asc" } }),
     prisma.user.findMany({
-      where: { role: Role.TEACHER, emailVerifiedAt: { not: null } },
+      where: activeFacultyWhere,
       orderBy: { name: "asc" },
     }),
     prisma.classSubject.findMany({

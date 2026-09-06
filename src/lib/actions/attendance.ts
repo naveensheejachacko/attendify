@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { AttendanceStatus, Role } from "@/lib/roles";
 import { requireUser } from "@/lib/session";
+import { activeStudentWhere } from "@/lib/people";
 import type { ActionState } from "@/lib/actions/auth";
 
 const STATUSES = new Set<string>(Object.values(AttendanceStatus));
@@ -23,7 +24,7 @@ export async function saveAttendanceAction(
 
   const assignment = await prisma.classSubject.findUnique({
     where: { id: classSubjectId },
-    include: { class: { include: { students: true } } },
+    include: { class: { include: { students: { where: activeStudentWhere } } } },
   });
   if (!assignment) {
     return { error: "Subject assignment not found." };
